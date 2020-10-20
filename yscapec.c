@@ -32,12 +32,13 @@
 /*
  *  Used by main to communicate with parse_opt.
  */
-#define MIN_ARGS 0
+#define MIN_ARGS 1
 #define MAX_ARGS 1
 struct arguments
 {
     char *args[MAX_ARGS+1];     /* positional args */
-    int verbose;                /* verbose */
+    int no_conversion;          /* no_conversion */
+    int line_size;              /* line size */
 };
 
 /***************************************************************************
@@ -63,7 +64,8 @@ static char args_doc[] = "FILE";
  */
 static struct argp_option options[] = {
 /*-name-------------key-----arg---------flags---doc-----------------group */
-{"verbose",         'l',    0,          0,      "Verbose mode.",    0},
+{"no-conversion",   'n',    0,          0,      "Don't convert double quote to single quote.",    0},
+{"line-size",       's',    "SIZE",     0,      "Line size",    0},
 {0}
 };
 
@@ -87,8 +89,11 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
     struct arguments *arguments = state->input;
 
     switch (key) {
-    case 'l':
-        arguments->verbose = 1;
+    case 's':
+        arguments->line_size = atoi(arg);
+        break;
+    case 'n':
+        arguments->no_conversion = 1;
         break;
 
     case ARGP_KEY_ARG:
@@ -115,8 +120,52 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 /***************************************************************************
  *
  ***************************************************************************/
-int your_utility(int verbose)
+int your_utility(const char *filename, int no_conversion, int line_size)
 {
+    FILE *file = fopen(filename, "r");
+    if(!file) {
+        printf("Cannot open '%s': %s\n", filename, strerror(errno));
+        exit(-1);
+    }
+    int ch;
+    int count = 0;
+    while ((ch = getc(file)) != EOF) {
+        count++;
+        switch (ch) {
+        case '\"':
+            if(no_conversion) {
+                fputs("\\\"", stdout);
+            } else {
+                fputs("'", stdout);
+            }
+            break;
+        case '\\':
+            fputs("\\\\", stdout);
+            break;
+        case '\r':
+        case '\n':
+            count = line_size - count;
+            while(count>0) {
+                fputs(" ", stdout);
+                count--;
+            }
+            fputs("\\n\\\n", stdout);
+            count = 0;
+            break;
+        case '\t':
+            fputs("    ", stdout);
+            break;
+        // and so on
+        default:
+            if (iscntrl(ch)) {
+                fprintf(stdout, "\\%03o", ch);
+            } else {
+                fputc(ch, stdout);
+            }
+        }
+    }
+
+    fclose(file);
     return 0;
 }
 
@@ -130,8 +179,8 @@ int main(int argc, char *argv[])
     /*
      *  Default values
      */
-    arguments.verbose = 0;
-
+    arguments.no_conversion = 0;
+    arguments.line_size = 70;
     /*
      *  Parse arguments
      */
@@ -140,5 +189,5 @@ int main(int argc, char *argv[])
     /*
      *  Do your work
      */
-    return your_utility(arguments.verbose);
+    return your_utility(arguments.args[0], arguments.no_conversion, arguments.line_size);
 }
