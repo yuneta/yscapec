@@ -127,6 +127,9 @@ int your_utility(const char *filename, int no_conversion, int line_size)
         printf("Cannot open '%s': %s\n", filename, strerror(errno));
         exit(-1);
     }
+
+    fputs("\"\\\n", stdout);
+
     int ch;
     int count = 0;
     while ((ch = getc(file)) != EOF) {
@@ -164,6 +167,16 @@ int your_utility(const char *filename, int no_conversion, int line_size)
             }
         }
     }
+
+    count = line_size - count - 1;
+    while(count>0) {
+        fputs(" ", stdout);
+        count--;
+    }
+    fputs("\\n\\\n", stdout);
+    count = 0;
+
+    fputs("\";\n", stdout);
 
     fclose(file);
     return 0;
