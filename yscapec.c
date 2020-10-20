@@ -33,7 +33,7 @@
  *  Used by main to communicate with parse_opt.
  */
 #define MIN_ARGS 0
-#define MAX_ARGS 0
+#define MAX_ARGS 1
 struct arguments
 {
     char *args[MAX_ARGS+1];     /* positional args */
@@ -55,7 +55,7 @@ const char *argp_program_bug_address = SUPPORT;
 static char doc[] = DOC;
 
 /* A description of the arguments we accept. */
-static char args_doc[] = "";
+static char args_doc[] = "FILE";
 
 /*
  *  The options we understand.
