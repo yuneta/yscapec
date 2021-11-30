@@ -61,6 +61,7 @@ TARGET_LINK_LIBRARIES(yscapec
     lzma        # used by libunwind
     uuid
     m
+    util
 )
 
 ##############################################
